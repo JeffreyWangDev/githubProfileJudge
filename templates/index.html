@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GitHub Rating</title>
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif; 
+            background-color: #f4f4f4; /* Light mode default */
+            color: #333; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            transition: background-color 0.3s ease;
+        }
+
+        .container {
+            background-color: #fff; 
+            padding: 40px 50px; 
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+            text-align: center;
+            width: 500px;
+            max-width: 90%; 
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        h1 {
+            color: #007bff; 
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            transition: color 0.3s ease;
+        }
+
+        .info-text {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            border: 1px solid #ced4da; 
+            border-radius: 5px;
+            width: 250px;
+            margin-right: 10px;
+            background-color: #fff; 
+            color: #333; 
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: #007bff; 
+            outline: none;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: #007bff; 
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em; 
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0069d9; 
+        }
+
+        #rating-result {
+            margin-top: 20px;
+            font-size: 1.4em;
+            color: #333; 
+            transition: color 0.3s ease;
+            display: none; 
+            white-space: pre-wrap; 
+        }
+
+        #rating-result.positive {
+            color: #28a745; /* Green for positive response */
+        }
+
+        #rating-result.neutral {
+            color: #ffc107; /* Yellow for neutral response */
+        }
+
+        #rating-result.negative {
+            color: #dc3545; /* Red for negative response */
+        }
+
+        .loading {
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+            margin-top: 20px;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #ddd;
+            border-radius: 50%;
+            border-top-color: #007bff; 
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-spinner.dark-mode {
+            border-top-color: #007bff; 
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #121212; 
+            color: #fff; 
+        }
+
+        .container.dark-mode {
+            background-color: #222; 
+            box-shadow: 0 2px 5px rgba(255, 255, 255, 0.1); 
+        }
+
+        h1.dark-mode,
+        #rating-result.dark-mode,
+        .info-text.dark-mode {
+            color: #fff; 
+        }
+
+        input[type="text"].dark-mode {
+            background-color: #333; 
+            border-color: #666; 
+            color: #fff; 
+        }
+        .input-group input[type="text"]:disabled,
+        .input-group button:disabled {
+            background-color: #444; 
+            color: #888; 
+            cursor: not-allowed; 
+        }
+
+        .input-group input[type="text"].dark-mode:disabled,
+        .input-group button.dark-mode:disabled {
+            background-color: #666; 
+            color: #ccc; 
+            cursor: not-allowed; 
+        }
+        button.dark-mode {
+            background-color: #007bff; 
+            color: #fff; 
+        }
+
+        .loading-spinner.dark-mode {
+            border-top-color: #007bff; 
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin-top: 20px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc; 
+            border-radius: 34px;
+            transition: background-color 0.3s ease;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        input:checked + .slider {
+            background-color: #008CBA;
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #008CBA;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .toggle-switch label {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 80px; 
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #666; 
+            transition: color 0.3s ease;
+            pointer-events: none; 
+        }
+
+        .toggle-switch label.dark-mode {
+            color: #fff; 
+        }
+        .input-group input[type="text"]:disabled,
+        .input-group button:disabled {
+            background-color: #ddd; 
+            color: #888; 
+            cursor: not-allowed; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GitHub Rating</h1>
+        <p class="info-text">Enter a GitHub username to see their rating:</p>
+
+        <div class="input-group">
+            <input type="text" id="github-username" placeholder="Enter GitHub username" > 
+            <button id="get-rating">Get Rating</button>
+        </div>
+
+        <div id="rating-result"></div>
+        <div class="loading" id="loading-spinner-container">
+            <div class="loading-spinner"></div>
+        </div> 
+
+        <label class="toggle-switch">
+            <input type="checkbox" id="darkModeToggle">
+            <span class="slider"></span>
+            <label for="darkModeToggle">Dark Mode</label>
+        </label>
+    </div>
+
+    <script>
+        const usernameInput = document.getElementById('github-username');
+        const getRatingButton = document.getElementById('get-rating');
+        const ratingResult = document.getElementById('rating-result');
+        const loadingSpinnerContainer = document.getElementById('loading-spinner-container');
+
+        let isTypingOrLoading = false; 
+
+        getRatingButton.addEventListener('click', async () => {
+            usernameInput.disabled = true;
+            getRatingButton.disabled = true;
+            if (isTypingOrLoading) {
+                return; 
+            }
+
+            isTypingOrLoading = true; 
+            const username = usernameInput.value;
+            if (username.trim() === "") {
+                ratingResult.textContent = "Please enter a username.";
+                isTypingOrLoading = false; 
+                return;
+            }
+
+            loadingSpinnerContainer.style.display = 'flex';
+            ratingResult.textContent = ''; 
+            ratingResult.style.display = 'block';
+
+            try {
+                const response = await fetch(`/generate/${username}`); 
+                const data = await response.json();
+                loadingSpinnerContainer.style.display = 'none'; 
+
+                // Simulate typing effect
+                let text = `${data.text}`;
+                let i = 0;
+                const typingInterval = 35;
+                const typingTimeout = setTimeout(() => {
+                    loadingSpinnerContainer.style.display = 'none';
+                    isTypingOrLoading = false; 
+                }, text.length * typingInterval);
+
+                const typeWriter = setInterval(() => {
+                    ratingResult.textContent = text.substring(0, i);
+                    i++;
+                    if (i > text.length) {
+                        clearInterval(typeWriter);
+                        clearTimeout(typingTimeout);
+                    }
+                }, typingInterval);
+
+                // Add class to the rating result based on the response
+                if (data.sentiment === 'positive') {
+                    ratingResult.classList.add('positive');
+                } else if (data.sentiment === 'neutral') {
+                    ratingResult.classList.add('neutral');
+                } else if (data.sentiment === 'negative') {
+                    ratingResult.classList.add('negative');
+                }
+
+                usernameInput.disabled = false; 
+                getRatingButton.disabled = false; 
+            } catch (error) {
+                loadingSpinnerContainer.style.display = 'none';
+                ratingResult.textContent = "An error occurred. Please try again later.";
+                ratingResult.style.display = 'block';
+                isTypingOrLoading = false; 
+                usernameInput.disabled = false; 
+                getRatingButton.disabled = false; 
+            }
+        });
+
+        usernameInput.addEventListener('input', () => {
+            if (isTypingOrLoading) {
+                usernameInput.value = usernameInput.value.slice(0, -1); 
+            }
+        });
+
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        darkModeToggle.addEventListener('change', () => {
+            document.body.classList.toggle('dark-mode');
+            document.querySelector('.container').classList.toggle('dark-mode');
+            document.querySelector('input').classList.toggle('dark-mode');
+            document.querySelector('.slider').classList.toggle('dark-mode');
+            document.querySelector('.toggle-switch label').classList.toggle('dark-mode');
+            document.querySelector('.loading-spinner').classList.toggle('dark-mode'); 
+        });  
+    </script>
+</body>
+</html>

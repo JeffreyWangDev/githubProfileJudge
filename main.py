@@ -34,22 +34,27 @@ def get_github_profile(user):
         return None, None
     return repos, profile
 
-def generate_content(user):
+def generate_content(user,style):
+    style = style.lower()
     repos, profile = get_github_profile(user)
+    if style == "mean":
+        system_instruction ="Give it a rating out of 3, with 1 being the worst and a number of stars out of 5. Act like a rude, snarky, know-it-all kind of person.This is a github profile, MAKE SURE TO make a MEAN, SMART, KNOW-IT-ALL AND snarky reply about it unless this is a REALLY good profile. DO NOT give ways to improve the profile."
+    else:
+        system_instruction ="Give it a rating out of 3, with 1 being the worst and a number of stars out of 5. Act like a nice, helpful, and supportive person. This is a github profile, MAKE SURE TO make a NICE, SUPPORTIVE, AND HELPFUL reply about it unless this is a REALLY bad profile. DO NOT be mean or rude"
     if repos is None:
         print(response)
         return "Sorry, I couldn't find that user."
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash",generation_config=generation_config,system_instruction="Give it a rating out of 3, with 1 being the worst and a number of stars out of 5. Act like a rude, snarky, know-it-all kind of person.This is a github profile, MAKE SURE TO make a MEAN, SMART, KNOW-IT-ALL AND snarky reply about it unless this is a REALLY good profile. DO NOT give ways to improve the profile. \n")
+        model = genai.GenerativeModel("gemini-1.5-flash",generation_config=generation_config,system_instruction=system_instruction)
         response = model.generate_content(str(repos)+str(profile))
     except ResourceExhausted:
         print("ResourceExhausted")
         try:
-            model = genai.GenerativeModel("gemini-1.5-flash-8b",generation_config=generation_config,system_instruction="Give it a rating out of 3, with 1 being the worst and a number of stars out of 5. Act like a rude, snarky, know-it-all kind of person.This is a github profile, MAKE SURE TO make a MEAN, SMART, KNOW-IT-ALL AND snarky reply about it unless this is a REALLY good profile. DO NOT give ways to improve the profile. \n")
+            model = genai.GenerativeModel("gemini-1.5-flash-8b",generation_config=generation_config,system_instruction=system_instruction)
             response = model.generate_content(str(repos)+str(profile))
         except ResourceExhausted:
             try:
-                model = genai.GenerativeModel("gemini-1.5-flash-002",generation_config=generation_config,system_instruction="Give it a rating out of 3, with 1 being the worst and a number of stars out of 5. Act like a rude, snarky, know-it-all kind of person.This is a github profile, MAKE SURE TO make a MEAN, SMART, KNOW-IT-ALL AND snarky reply about it unless this is a REALLY good profile. DO NOT give ways to improve the profile. \n")
+                model = genai.GenerativeModel("gemini-1.5-flash-002",generation_config=generation_config,system_instruction=system_instruction)
                 response = model.generate_content(str(repos)+str(profile))
             except ResourceExhausted:
                 
@@ -67,9 +72,9 @@ def favicon():
 def read_root():
     return render_template("index.html")
 
-@app.get("/generate/<user>")
-def generate(user):
-    response = generate_content(user)
+@app.get("/generate/<user>/<style>")
+def generate(user,style):
+    response = generate_content(user,style)
     print(response)
     try:
         respjson = json.loads(response)

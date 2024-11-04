@@ -5,7 +5,7 @@
     <style>
         body {
             font-family: 'Open Sans', sans-serif; 
-            background-color: #f4f4f4; /* Light mode default */
+            background-color: #f4f4f4;
             color: #333; 
             display: flex;
             justify-content: center;
@@ -86,15 +86,15 @@
         }
 
         #rating-result.positive {
-            color: #28a745; /* Green for positive response */
+            color: #28a745;
         }
 
         #rating-result.neutral {
-            color: #ffc107; /* Yellow for neutral response */
+            color: #ffc107;
         }
 
         #rating-result.negative {
-            color: #dc3545; /* Red for negative response */
+            color: #dc3545;
         }
 
         .loading {
@@ -123,7 +123,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Dark Mode Styles */
         body.dark-mode {
             background-color: #121212; 
             color: #fff; 
@@ -238,6 +237,46 @@
             color: #888; 
             cursor: not-allowed; 
         }
+        .version-selector {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .version-selector select {
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            background-color: #fff;
+            color: #333;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease; 
+            font-size: 1em;
+            font-family: inherit;
+            appearance: none; 
+        }
+        
+        .version-selector select:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); 
+        }
+        
+        .version-selector select:disabled {
+            background-color: #f2f2f2; 
+            color: #888;
+            cursor: not-allowed;
+        }
+        
+        .version-selector select::after {
+            content: "\279C";
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #888;
+        }
     </style>
 </head>
 <body>
@@ -249,7 +288,12 @@
             <input type="text" id="github-username" placeholder="Enter GitHub username" > 
             <button id="get-rating">Get Rating</button>
         </div>
-
+        <div class="version-selector">
+            <select id="rating-version">
+                <option value="nice">Nice</option>
+                <option value="mean">Mean</option>
+            </select>
+        </div>
         <div id="rating-result"></div>
         <div class="loading" id="loading-spinner-container">
             <div class="loading-spinner"></div>
@@ -267,12 +311,14 @@
         const getRatingButton = document.getElementById('get-rating');
         const ratingResult = document.getElementById('rating-result');
         const loadingSpinnerContainer = document.getElementById('loading-spinner-container');
+        
+        const ratingVersionSelect = document.getElementById('rating-version');
 
         let isTypingOrLoading = false; 
 
         getRatingButton.addEventListener('click', async () => {
-            usernameInput.disabled = true;
-            getRatingButton.disabled = true;
+            const selectedVersion = ratingVersionSelect.value;
+
             if (isTypingOrLoading) {
                 return; 
             }
@@ -284,23 +330,27 @@
                 isTypingOrLoading = false; 
                 return;
             }
-
+            usernameInput.disabled = true;
+            getRatingButton.disabled = true;
+            ratingVersionSelect.disabled = true;
             loadingSpinnerContainer.style.display = 'flex';
             ratingResult.textContent = ''; 
             ratingResult.style.display = 'block';
 
             try {
-                const response = await fetch(`/generate/${username}`); 
+                const response = await fetch(`/generate/${username}/${selectedVersion}`); 
                 const data = await response.json();
                 loadingSpinnerContainer.style.display = 'none'; 
 
-                // Simulate typing effect
                 let text = `${data.text}`;
                 let i = 0;
                 const typingInterval = 35;
                 const typingTimeout = setTimeout(() => {
                     loadingSpinnerContainer.style.display = 'none';
-                    isTypingOrLoading = false; 
+                    usernameInput.disabled = false; 
+                    getRatingButton.disabled = false; 
+                    ratingVersionSelect.disabled = false;
+                    isTypingOrLoading = false;
                 }, text.length * typingInterval);
 
                 const typeWriter = setInterval(() => {
@@ -312,7 +362,6 @@
                     }
                 }, typingInterval);
 
-                // Add class to the rating result based on the response
                 if (data.sentiment === 'positive') {
                     ratingResult.classList.add('positive');
                 } else if (data.sentiment === 'neutral') {
@@ -321,8 +370,7 @@
                     ratingResult.classList.add('negative');
                 }
 
-                usernameInput.disabled = false; 
-                getRatingButton.disabled = false; 
+
             } catch (error) {
                 loadingSpinnerContainer.style.display = 'none';
                 ratingResult.textContent = "An error occurred. Please try again later.";
@@ -330,6 +378,7 @@
                 isTypingOrLoading = false; 
                 usernameInput.disabled = false; 
                 getRatingButton.disabled = false; 
+                ratingVersionSelect.disabled = false;
             }
         });
 

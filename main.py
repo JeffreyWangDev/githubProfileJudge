@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv 
 import requests
 from flask import Flask, jsonify, render_template, send_from_directory
-load_dotenv() 
+# load_dotenv()
 
 genai.configure(api_key=os.getenv('API_KEY'))
 

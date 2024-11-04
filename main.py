@@ -1,5 +1,22 @@
 import google.generativeai as genai
 from google.api_core.exceptions import ResourceExhausted
+from google.ai.generativelanguage_v1beta.types import content
+import json
+import typing_extensions as typing
+
+class Responce (typing.TypedDict):
+    response: str
+    starRating: int
+    rating: int
+    
+generation_config = {
+  "temperature": 1,
+  "top_p": 0.95,
+  "top_k": 40,
+  "max_output_tokens": 8192,
+  "response_schema": list[Responce],
+  "response_mime_type": "application/json",
+}
 import os
 from dotenv import load_dotenv 
 import requests
@@ -20,23 +37,25 @@ def get_github_profile(user):
 def generate_content(user):
     repos, profile = get_github_profile(user)
     if repos is None:
+        print(response)
         return "Sorry, I couldn't find that user."
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content("Act like a rude, snarky, know-it-all kind of person.This is a github profile, THE FIRST WORD of the responce should be positive neutral or negative then give a rating out of 5 stars and then ONLY make a MEAN, SMART, KNOW-IT-ALL AND snarky reply about it unless this is a REALLY good profile. DO NOT give ways to improve the profile. This is the website for the profile "+str(repos)+str(profile))
+        model = genai.GenerativeModel("gemini-1.5-flash",generation_config=generation_config,system_instruction="Give it a rating out of 3, with 1 being the worst and a number of stars out of 5. Act like a rude, snarky, know-it-all kind of person.This is a github profile, MAKE SURE TO make a MEAN, SMART, KNOW-IT-ALL AND snarky reply about it unless this is a REALLY good profile. DO NOT give ways to improve the profile. \n")
+        response = model.generate_content(str(repos)+str(profile))
     except ResourceExhausted:
         print("ResourceExhausted")
         try:
-            model = genai.GenerativeModel("gemini-1.5-flash-8b")
-            response = model.generate_content("Act like a rude, snarky, know-it-all kind of person.This is a github profile, THE FIRST WORD of the responce should be positive neutral or negative then give a rating out of 5 stars and then ONLY make a MEAN, SMART, KNOW-IT-ALL AND snarky reply about it unless this is a REALLY good profile. DO NOT give ways to improve the profile. This is the website for the profile "+str(repos)+str(profile))
+            model = genai.GenerativeModel("gemini-1.5-flash-8b",generation_config=generation_config,system_instruction="Give it a rating out of 3, with 1 being the worst and a number of stars out of 5. Act like a rude, snarky, know-it-all kind of person.This is a github profile, MAKE SURE TO make a MEAN, SMART, KNOW-IT-ALL AND snarky reply about it unless this is a REALLY good profile. DO NOT give ways to improve the profile. \n")
+            response = model.generate_content(str(repos)+str(profile))
         except ResourceExhausted:
             try:
-                model = genai.GenerativeModel("gemini-1.0-pro")
-                response = model.generate_content("Act like a rude, snarky, know-it-all kind of person.This is a github profile, THE FIRST WORD of the responce should be positive neutral or negative then give a rating out of 5 stars and then ONLY make a MEAN, SMART, KNOW-IT-ALL AND snarky reply about it unless this is a REALLY good profile. DO NOT give ways to improve the profile. This is the website for the profile "+str(repos)+str(profile))
+                model = genai.GenerativeModel("gemini-1.5-flash-002",generation_config=generation_config,system_instruction="Give it a rating out of 3, with 1 being the worst and a number of stars out of 5. Act like a rude, snarky, know-it-all kind of person.This is a github profile, MAKE SURE TO make a MEAN, SMART, KNOW-IT-ALL AND snarky reply about it unless this is a REALLY good profile. DO NOT give ways to improve the profile. \n")
+                response = model.generate_content(str(repos)+str(profile))
             except ResourceExhausted:
+                
                 response = "Sorry, I'm out of ideas."
                 return response
-    return response.text
+    return response.text[:-2][1:]
 
 app = Flask(__name__)
 
@@ -50,13 +69,24 @@ def read_root():
 
 @app.get("/generate/<user>")
 def generate(user):
+    response = generate_content(user)
+    print(response)
     try:
-        response = generate_content(user)
-        rating = response.split()[0]
-        response = ' '.join(response.split()[1:]).replace("★", "★\n", 1)
-        return jsonify({"sentiment":rating.lower(),"text": response})
+        respjson = json.loads(response)
+        response = "★"*int(respjson["starRating"])+"\n"+respjson["response"]
+        sent = respjson["rating"]
     except:
-        return jsonify({"error": "Sorry, I couldn't find that user."})
+        response = "Sorry, Error in generating response."
+        sent = 0
+    sentresp = ""
+    if sent == 1:
+        sentresp = "negative"
+    elif sent == 2:
+        sentresp = "neutral"
+    elif sent == 3:
+        sentresp = "positive"
+    return jsonify({"sentiment":sentresp ,"text": response})
+
 
 if __name__ == "__main__":
     app.run()

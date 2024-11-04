@@ -2,6 +2,7 @@
 
 GitHub Profile Judge is a web application that evaluates GitHub profiles and provides a snarky rating based on the profile's content.
 <img width="583" alt="image" src="https://github.com/user-attachments/assets/17406795-c15b-4e76-91ce-283f49409145">
+![image](https://github.com/user-attachments/assets/be1fea15-ee41-4c63-885a-2fc1d43d3130)
 
 
 ## Features

@@ -21,7 +21,7 @@ GitHub Profile Judge is a web application that evaluates GitHub profiles and pro
 1. Clone the repository:
 
     ```sh
-    git clone https://github.com/yourusername/githubProfileJudge.git
+    git clone https://github.com/jeffreywangdev/githubProfileJudge.git
     cd githubProfileJudge
     ```
 

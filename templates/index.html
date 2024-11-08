@@ -364,10 +364,17 @@
 
                 if (data.sentiment === 'positive') {
                     ratingResult.classList.add('positive');
+                    ratingResult.classList.remove("negative");
+                    ratingResult.classList.remove("neutral");
+
                 } else if (data.sentiment === 'neutral') {
                     ratingResult.classList.add('neutral');
+                    ratingResult.classList.remove('positive');
+                    ratingResult.classList.remove("negative");
                 } else if (data.sentiment === 'negative') {
                     ratingResult.classList.add('negative');
+                    ratingResult.classList.remove('positive');
+                    ratingResult.classList.remove("neutral");
                 }
 
 

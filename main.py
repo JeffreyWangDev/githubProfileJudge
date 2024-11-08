@@ -1,6 +1,7 @@
 import google.generativeai as genai
 from google.api_core.exceptions import ResourceExhausted
-from google.ai.generativelanguage_v1beta.types import content
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
+
 import json
 import typing_extensions as typing
 
@@ -8,7 +9,7 @@ class Responce (typing.TypedDict):
     response: str
     starRating: int
     rating: int
-    
+
 generation_config = {
   "temperature": 1,
   "top_p": 0.95,
@@ -16,15 +17,21 @@ generation_config = {
   "max_output_tokens": 8192,
   "response_schema": list[Responce],
   "response_mime_type": "application/json",
+  
 }
 import os
 from dotenv import load_dotenv 
 import requests
 from flask import Flask, jsonify, render_template, send_from_directory
-# load_dotenv()
+load_dotenv()
 
 genai.configure(api_key=os.getenv('API_KEY'))
-
+safety_settings={
+    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_ONLY_HIGH
+}
 def get_github_profile(user):
     repo = requests.get(f"https://api.github.com/users/{user}/repos")
     repos = repo.json()
@@ -38,26 +45,25 @@ def generate_content(user,style):
     style = style.lower()
     repos, profile = get_github_profile(user)
     if style == "mean":
-        system_instruction ="Give it a rating out of 3, with 1 being the worst and a number of stars out of 5. Act like a rude, snarky, know-it-all kind of person.This is a github profile, MAKE SURE TO make a MEAN, SMART, KNOW-IT-ALL AND snarky reply about it unless this is a REALLY good profile. DO NOT give ways to improve the profile."
+        system_instruction ="Give it a rating out of 3, with 1 being the worst and a number of stars out of 5. Act like a rude, snarky, know-it-all kind of person.This is a github profile, MAKE SURE TO make a MEAN, SMART, KNOW-IT-ALL AND snarky reply about it unless this is a REALLY good profile. DO NOT give ways to improve the profile. Make sure to acually include a response about the profile."
     else:
-        system_instruction ="Give it a rating out of 3, with 1 being the worst and a number of stars out of 5. Act like a nice, helpful, and supportive person. This is a github profile, MAKE SURE TO make a NICE, SUPPORTIVE, AND HELPFUL reply about it unless this is a REALLY bad profile. DO NOT be mean or rude"
+        system_instruction ="Give it a rating out of 3, with 1 being the worst and a number of stars out of 5. Act like a nice, helpful, and supportive person. This is a github profile, MAKE SURE TO make a NICE, SUPPORTIVE, AND HELPFUL reply about it unless this is a REALLY bad profile. DO NOT be mean or rude. Make sure to acually include a response about the profile."
     if repos is None:
         print(response)
         return "Sorry, I couldn't find that user."
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash",generation_config=generation_config,system_instruction=system_instruction)
+        model = genai.GenerativeModel("gemini-1.5-flash",generation_config=generation_config,system_instruction=system_instruction,safety_settings=safety_settings)
         response = model.generate_content(str(repos)+str(profile))
     except ResourceExhausted:
         print("ResourceExhausted")
         try:
-            model = genai.GenerativeModel("gemini-1.5-flash-8b",generation_config=generation_config,system_instruction=system_instruction)
+            model = genai.GenerativeModel("gemini-1.5-flash-8b",generation_config=generation_config,system_instruction=system_instruction, safety_settings=safety_settings)
             response = model.generate_content(str(repos)+str(profile))
         except ResourceExhausted:
             try:
-                model = genai.GenerativeModel("gemini-1.5-flash-002",generation_config=generation_config,system_instruction=system_instruction)
+                model = genai.GenerativeModel("gemini-1.5-flash-002",generation_config=generation_config,system_instruction=system_instruction, safety_settings=safety_settings)
                 response = model.generate_content(str(repos)+str(profile))
             except ResourceExhausted:
-                
                 response = "Sorry, I'm out of ideas."
                 return response
     return response.text[:-2][1:]
